@@ -87,6 +87,6 @@ def metrics():
                   DATA_LABELED.parent / "monitoring_log.jsonl"]
     for c in candidates:
         if c.exists():
-            lines = [json.loads(l) for l in c.read_text().splitlines() if l.strip()]
+lines = [json.loads(ln) for ln in c.read_text().splitlines() if ln.strip()]
             return {"recent": lines[-10:]}
     return {"recent": []}

@@ -21,7 +21,7 @@ jobs:
       - name: Lint
         run: ruff check src service tests
       - name: Unit tests
-        run: pytest -q
+        run: python -m pytest -q
       # A "smoke" train against the sandbox proves the whole pipeline wires up.
       # Network-restricted runners can skip this with the if: condition.
       - name: Smoke train

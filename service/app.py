@@ -81,12 +81,8 @@ def feedback(req: FeedbackRequest):
 
 @app.get("/metrics")
 def metrics():
-    log = Path("data").parent / "monitoring_log.jsonl"
-    log = Path("monitoring_log.jsonl") if not log.exists() else log
-    candidates = [Path("monitoring_log.jsonl"),
-                  DATA_LABELED.parent / "monitoring_log.jsonl"]
-    for c in candidates:
-        if c.exists():
-lines = [json.loads(ln) for ln in c.read_text().splitlines() if ln.strip()]
-            return {"recent": lines[-10:]}
-    return {"recent": []}
+    log_path = DATA_LABELED.parent / "monitoring_log.jsonl"
+    if not log_path.exists():
+        return {"recent": []}
+    lines = [json.loads(ln) for ln in log_path.read_text().splitlines() if ln.strip()]
+    return {"recent": lines[-10:]}

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+mlruns/
+mlartifacts/
+mlflow.db
+data/raw/*
+data/labeled/*
+!data/raw/.gitkeep
+!data/labeled/.gitkeep
+monitoring_log.jsonl
+.DS_Store

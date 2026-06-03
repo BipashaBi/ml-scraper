@@ -1,0 +1,13 @@
+beautifulsoup4>=4.12
+requests>=2.31
+pydantic>=2.6
+PyYAML>=6.0
+pandas>=2.1
+numpy>=1.26
+scikit-learn>=1.4
+mlflow>=2.12
+fastapi>=0.110
+uvicorn[standard]>=0.29
+# Optional — only needed when target.render_js: true
+playwright>=1.43
+selenium>=4.19   # alternative browser engine (render_engine: selenium)

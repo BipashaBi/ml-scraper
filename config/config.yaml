@@ -1,0 +1,45 @@
+# =============================================================================
+# THE ONLY FILE YOU NEED TO EDIT TO SCRAPE A NEW SITE.
+# Point `target` at your site, list the fields you want, and (optionally) give
+# a few weak-supervision hints so the model can bootstrap its own labels.
+# =============================================================================
+
+target:
+  name: books_sandbox                 # used to namespace data/models/runs
+  start_urls:
+    - "https://books.toscrape.com/catalogue/page-1.html"
+  # How many pages to follow from the start urls (BFS). Keep small while testing.
+  max_pages: 3
+  # CSS selector for the repeating "record" container on a listing page.
+  # The model classifies blocks WITHIN each record into your fields.
+  record_selector: "article.product_pod"
+  render_js: false                    # true -> use a browser (JS sites). false -> plain HTTP (faster).
+  render_engine: playwright           # which browser when render_js is true: playwright | selenium
+  request_delay_seconds: 1.0          # politeness: be a good citizen, respect robots.txt
+  user_agent: "ml-scraper/0.1 (+portfolio-project; contact: you@example.com)"
+
+# The structured schema you want out. Each field becomes a class the model learns.
+# `hints` are OPTIONAL labeling-function clues used for weak supervision
+# (see src/dataset.py). They get the first model off the ground with zero manual
+# labeling; the retrain loop then improves on real feedback.
+schema:
+  fields:
+    - name: title
+      hints: { tag_in: ["h1", "h2", "h3", "a"], min_len: 5, max_len: 200 }
+    - name: price
+      hints: { contains_currency: true, has_digits: true, max_len: 15 }
+    - name: availability
+      hints: { keywords: ["in stock", "available", "out of stock"], max_len: 40 }
+    - name: rating
+      hints: { keywords: ["star-rating", "one", "two", "three", "four", "five"] }
+
+# MLOps knobs
+mlops:
+  mlflow_tracking_uri: "sqlite:///mlflow.db"   # local SQLite store; swap for a server URI in prod
+  registered_model_name: "block-field-classifier"
+  min_confidence: 0.55                   # below this, a field is "unfilled" / needs review
+  promote_metric: "macro_f1"             # champion/challenger gate
+  promote_min_delta: 0.01                # challenger must beat champion by this much
+  # Monitoring thresholds that trigger a retrain (see src/monitor.py)
+  drift_psi_threshold: 0.2               # PSI > 0.2 == meaningful drift
+  min_success_rate: 0.80                 # fraction of fields filled above min_confidence

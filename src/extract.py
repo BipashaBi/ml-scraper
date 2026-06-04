@@ -10,23 +10,38 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 
-import mlflow.sklearn
+import joblib
 import pandas as pd
-from mlflow import MlflowClient
 
-from .config import Config, load_config
+from .config import MODELS_DIR, Config, load_config
 from .crawl import Block, fetch, to_blocks
 from .features import block_to_features
 
 
 @lru_cache(maxsize=4)
 def _load_model(tracking_uri: str, name: str):
-    """Load the current Production model (falls back to latest version)."""
+    """Load the model for inference.
+
+    Production deployments ship a portable `models/model.joblib` file and load
+    that directly — no MLflow needed at serving time. Only if that file is
+    absent (e.g. a fresh local dev checkout) do we fall back to the MLflow
+    registry, importing mlflow lazily so the deployed image stays slim.
+    """
+    local = MODELS_DIR / "model.joblib"
+    if local.exists():
+        return joblib.load(local)
+
+    import mlflow.sklearn
+    from mlflow import MlflowClient
+
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient(tracking_uri=tracking_uri)
     versions = client.search_model_versions(f"name='{name}'")
     if not versions:
-        raise RuntimeError(f"No registered model '{name}'. Train one first.")
+        raise RuntimeError(
+            f"No model file at {local} and no registered model '{name}'. "
+            "Run `python -m src.train` first."
+        )
     prod = [v for v in versions if v.current_stage == "Production"]
     chosen = prod[0] if prod else max(versions, key=lambda v: int(v.version))
     return mlflow.sklearn.load_model(f"models:/{name}/{chosen.version}")

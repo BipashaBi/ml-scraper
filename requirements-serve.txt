@@ -1,0 +1,13 @@
+# Slim dependencies for the deployed web service.
+# The server only loads a pre-trained model file and serves predictions, so it
+# does NOT need mlflow (training), playwright, or selenium (JS crawling).
+beautifulsoup4>=4.12
+requests>=2.31
+pydantic>=2.6
+PyYAML>=6.0
+pandas>=2.1
+numpy>=1.26
+scikit-learn>=1.4
+joblib>=1.3
+fastapi>=0.110
+uvicorn[standard]>=0.29

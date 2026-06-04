@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import joblib
 import mlflow
 import mlflow.sklearn
 import pandas as pd
@@ -22,7 +23,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from .config import Config, load_config
+from .config import MODELS_DIR, Config, load_config
 from .dataset import build_dataset
 from .features import CLASS_FEATURE, NUMERIC_FEATURES, TEXT_FEATURE
 
@@ -100,6 +101,11 @@ def train(cfg: Config, rebuild_data: bool = True) -> dict:
             pipe, "model",
             registered_model_name=cfg.mlops.registered_model_name,
         )
+
+        # Also save a portable copy for production serving (no MLflow needed).
+        joblib.dump(pipe, MODELS_DIR / "model.joblib")
+        print(f"[train] saved deployable model -> {MODELS_DIR / 'model.joblib'}")
+
         print(f"[train] macro_f1={macro_f1:.3f}  run_id={run.info.run_id}")
         return {"run_id": run.info.run_id, "macro_f1": macro_f1,
                 "baseline": baseline}

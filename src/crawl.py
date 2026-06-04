@@ -49,12 +49,21 @@ class Block:
 
 
 def _robots_allowed(url: str, user_agent: str) -> bool:
-    """Respect robots.txt. Being a good citizen is also a great interview answer."""
+    """Respect robots.txt — being a good citizen is also a great interview answer.
+
+    We fetch robots.txt with our *own* User-Agent. Some sites (e.g. Wikimedia)
+    return 403 to default library agents, and Python's RobotFileParser treats a
+    403 on robots.txt as 'disallow everything', which would wrongly block us.
+    """
     try:
         parts = urlparse(url)
+        robots_url = f"{parts.scheme}://{parts.netloc}/robots.txt"
+        resp = requests.get(robots_url, headers={"User-Agent": user_agent},
+                            timeout=10)
+        if resp.status_code >= 400:
+            return True  # no usable robots.txt -> default to allowing
         rp = robotparser.RobotFileParser()
-        rp.set_url(f"{parts.scheme}://{parts.netloc}/robots.txt")
-        rp.read()
+        rp.parse(resp.text.splitlines())
         return rp.can_fetch(user_agent, url)
     except Exception:
         # If robots.txt is unreachable, default to caution but don't hard-crash.

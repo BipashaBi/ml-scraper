@@ -11,3 +11,4 @@ data/labeled/*
 !data/labeled/.gitkeep
 monitoring_log.jsonl
 .DS_Store
+.env

@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from src.config import DATA_LABELED, load_config
@@ -29,6 +30,10 @@ class ExtractRequest(BaseModel):
     url: str
 
 
+class FactsRequest(BaseModel):
+    url: str
+
+
 class FeedbackItem(BaseModel):
     text: str
     tag: str = "span"
@@ -38,6 +43,12 @@ class FeedbackItem(BaseModel):
 
 class FeedbackRequest(BaseModel):
     items: list[FeedbackItem]
+
+
+@app.get("/")
+def root():
+    # Send the bare URL to the interactive docs so the link lands somewhere useful.
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
@@ -56,6 +67,17 @@ def health():
 def extract(req: ExtractRequest):
     try:
         return extract_from_url(req.url, CFG)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/extract-facts")
+def extract_facts_endpoint(req: FactsRequest):
+    """LLM-based single-page fact extraction (e.g. a company Wikipedia article).
+    Requires the GEMINI_API_KEY environment variable to be set on the server."""
+    from src.llm_extract import extract_facts
+    try:
+        return extract_facts(req.url)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
